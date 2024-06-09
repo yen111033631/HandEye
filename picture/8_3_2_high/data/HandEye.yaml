@@ -1,0 +1,37 @@
+CameraTool_Angle: !!python/object/apply:numpy.core.multiarray.scalar
+- &id001 !!python/object/apply:numpy.dtype
+  args:
+  - f8
+  - false
+  - true
+  state: !!python/tuple
+  - 3
+  - <
+  - null
+  - null
+  - null
+  - -1
+  - -1
+  - 0
+- !!binary |
+  4qnrLYGVM8A=
+CameraTool_Height: !!python/object/apply:numpy.core.multiarray.scalar
+- *id001
+- !!binary |
+  NwFG5zFKQUA=
+CameraTool_Rx: !!python/object/apply:numpy.core.multiarray.scalar
+- *id001
+- !!binary |
+  HvPU6o4P2z8=
+CameraTool_Ry: !!python/object/apply:numpy.core.multiarray.scalar
+- *id001
+- !!binary |
+  hEGrnWy90r8=
+CameraTool_Rz: !!python/object/apply:numpy.core.multiarray.scalar
+- *id001
+- !!binary |
+  MLmvmrIXVkA=
+CameraTool_Width: !!python/object/apply:numpy.core.multiarray.scalar
+- *id001
+- !!binary |
+  gS1nreUKWkA=

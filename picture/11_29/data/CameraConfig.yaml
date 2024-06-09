@@ -1,0 +1,51 @@
+ARUCO_size: 6
+dist: !!python/object/apply:numpy.core.multiarray._reconstruct
+  args:
+  - &id001 !!python/name:numpy.ndarray ''
+  - !!python/tuple
+    - 0
+  - !!binary |
+    Yg==
+  state: !!python/tuple
+  - 1
+  - !!python/tuple
+    - 1
+    - 5
+  - &id002 !!python/object/apply:numpy.dtype
+    args:
+    - f8
+    - false
+    - true
+    state: !!python/tuple
+    - 3
+    - <
+    - null
+    - null
+    - null
+    - -1
+    - -1
+    - 0
+  - false
+  - !!binary |
+    vWI4q+JpxT/UJJNfGjrNvzo4z44mz3c/hvo1Bmhjhb9Kud0kEOq1vw==
+iMtx: !!python/object/apply:numpy.core.multiarray._reconstruct
+  args:
+  - *id001
+  - !!python/tuple
+    - 0
+  - !!binary |
+    Yg==
+  state: !!python/tuple
+  - 1
+  - !!python/tuple
+    - 3
+    - 3
+  - *id002
+  - false
+  - !!binary |
+    Hs2EAN6XjUAAAAAAAAAAAOO1RwGTf4NAAAAAAAAAAADcdu3E1ayNQBmmHqUymnZAAAAAAAAAAAAA
+    AAAAAAAAAAAAAAAAAPA/
+markerL: 0.015
+squareL: 0.02
+x: 9
+y: 12
