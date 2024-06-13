@@ -60,12 +60,12 @@ def connect_robot(ip="192.168.1.1", port=502):
     if c.is_open:
         # read 10 registers at address 0, store result in regs list
         print("connect success")
-        reg = c.read_holding_registers(0x1000,2)    
-        print(reg)
-        if(reg[0]==1):
-            print("DRA is runing now")
-        else:
-            print("DRA is closed, please run DRA")
+        # reg = c.read_holding_registers(0x1000,2)    
+        # print(reg)
+        # if(reg[0]==1):
+        #     print("DRA is runing now")
+        # else:
+        #     print("DRA is closed, please run DRA")
     else:
         print("failed to connect")
     
@@ -79,7 +79,7 @@ def read_csv(csv_file_path = 'position.csv'):
 
 
 def get_p_and_j(df, i):
-    return df.iloc[i][:3], df.iloc[i][-6:]
+    return df.iloc[i][:3], df.iloc[i][3:9]
 
 # ---------------------------------------------
 # write_into_regs
@@ -142,43 +142,35 @@ if __name__ == "__main__":
     
     # init connect 
     c = connect_robot()
-    my_cam = Cam(r"Z:\111\111033631_Yen\ARM\capture_images_real")
+    my_cam = Cam(r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_real")
     address = 0x1100
     
-    df = read_csv(r"Z:\111\111033631_Yen\ARM\capture_images_sim\arm_cube_noshuffle\position.csv")
-    # df["Px"] = df["Px"] * 1000
-    # df["Py"] = df["Py"] * 1000
-    # df["Pz"] = df["Pz"] * 1000
+    df = read_csv(r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_sim\arm_cube_noshuffle\position.csv")
 
-    p, j = get_p_and_j(df, 0)
-    print(p, j)
 
-    # timestep = []
-    # # for j in range(100):
-    # # start = time.time()
-    # for i in range(df.shape[0]):
-    #     num = write_into_regs([[0]*10], address)
-    #     print(num, "start")
+    timestep = []
+    # for j in range(100):
+    # start = time.time()
+    for i in range(df.shape[0]):
+        num = write_into_regs([[0]*10], address)
+        print(num, "start")
 
-    #     p, j = get_p_and_j(df, i)
-    #     print(p, j)
+        p, j = get_p_and_j(df, i)
+        # print(p, j)       
 
-        
+        # send position and joint data (write regs)
+        num = write_into_regs([[1], j, p], address)
+        print(num, "commute")
+        # check arm move done (read regs)
+        while True:
+            data = read_regs(1)
+            if data[0] == 2:
+                break
+        print("arm move done")
+        # time.sleep(1)
+        my_cam.capture_pic()
 
-    #     # send position and joint data (write regs)
-    #     num = write_into_regs([[1], j, p], address)
-    #     print(num, "commute")
-    #     # check arm move done (read regs)
-    #     while True:
-    #         data = read_regs(1)
-    #         if data[0] == 2:
-    #             break
-    #     print("arm move done")
-    #     # time.sleep(1)
-    #     my_cam.capture_pic()
-
-    # write_into_regs([[-1] * 10], address)
-    # my_cam.close_cam()
-    # # print(i)
+    write_into_regs([[-1] * 10], address)
+    my_cam.close_cam()
         
         
