@@ -7,6 +7,7 @@ from datetime import datetime
 import os
 import time
 import statistics
+from tqdm import tqdm
 
 class Cam:
     def __init__(self, image_dir="./images"):
@@ -26,7 +27,9 @@ class Cam:
         
         self.i = 0
         
-    def capture_pic(self):
+    def capture_pic(self, image_type=["color"], image_name=None):
+        if image_name == None: image_name = f"img_{self.i}"
+
         try:
             frames = self.pipeline.wait_for_frames()
             depth_frame = frames.get_depth_frame()
@@ -41,9 +44,13 @@ class Cam:
 
             images = np.hstack((color_image, depth_colormap))
 
-            cv2.imwrite(f"{self.image_dir}/img_{self.i}.jpg",images)
-            cv2.imwrite(f"{self.image_dir}/img_{self.i}_color.jpg",color_image)
-            cv2.imwrite(f"{self.image_dir}/img_{self.i}_depth.jpg",depth_image)
+            if "color" in image_type:
+                cv2.imwrite(f"{self.image_dir}/{image_name}.jpg",color_image)
+            if "depth" in image_type:
+                cv2.imwrite(f"{self.image_dir}/{image_name}_depth.jpg",depth_image)
+            if "hstack" in image_type:
+                cv2.imwrite(f"{self.image_dir}/{image_name}_hstack.jpg",images)        
+
             self.i += 1
         finally:
             pass
@@ -137,40 +144,53 @@ def intL2DRA(i):
         return intL2DRA( i + (2**32))
     else:
         return [int(i % (2**16)), int(i // (2**16))] # a, b = i % (2**16), i // (2**16) #(i >> 16)
-# ---------------------------------------------
+# --------------------------------------------------------
 if __name__ == "__main__":
-    
-    # init connect 
+    # ----------------------------------------------------
+    # init connect arm and cam
     c = connect_robot()
     my_cam = Cam(r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_real")
     address = 0x1100
     
-    df = read_csv(r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_sim\arm_cube_noshuffle\position.csv")
+    # ----------------------------------------------------
+    # read position csv 
+    csv_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_sim\arm_cube_shuffle_466\position.csv"
+    df = read_csv(csv_dir)
 
-
-    timestep = []
-    # for j in range(100):
-    # start = time.time()
-    for i in range(df.shape[0]):
+    with open(f'{my_cam.image_dir}/where_csv.txt', 'w') as file:
+        file.write(csv_dir)
+    # ----------------------------------------------------
+    # main loop
+    for i in tqdm(range(df.shape[0])):
+        # ------------------------------------------------
+        # reset memory
         num = write_into_regs([[0]*10], address)
-        print(num, "start")
-
+        # ------------------------------------------------
+        # get row name 
+        df_row_name = df.iloc[i].name
+        # ------------------------------------------------
+        # get arm position and joints
         p, j = get_p_and_j(df, i)
-        # print(p, j)       
-
+        # ------------------------------------------------
         # send position and joint data (write regs)
         num = write_into_regs([[1], j, p], address)
-        print(num, "commute")
+        # ------------------------------------------------
         # check arm move done (read regs)
         while True:
             data = read_regs(1)
             if data[0] == 2:
                 break
-        print("arm move done")
-        # time.sleep(1)
-        my_cam.capture_pic()
+        # ------------------------------------------------
+        # take photo 
+        my_cam.capture_pic(image_type="color", image_name=df_row_name) # TODO only capture color
+        # ------------------------------------------------
 
+    # ----------------------------------------------------
+    # write end command into memory 
     write_into_regs([[-1] * 10], address)
+    # ----------------------------------------------------
+    # close cam
     my_cam.close_cam()
+    # ----------------------------------------------------
         
         
