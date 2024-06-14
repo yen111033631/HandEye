@@ -154,7 +154,7 @@ if __name__ == "__main__":
     
     # ----------------------------------------------------
     # read position csv 
-    csv_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_sim\arm_cube_shuffle_466\position.csv"
+    csv_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_sim\arm_cube_shuffule_446\position.csv"
     df = read_csv(csv_dir)
 
     with open(f'{my_cam.image_dir}/where_csv.txt', 'w') as file:
