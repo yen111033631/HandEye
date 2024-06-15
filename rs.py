@@ -10,7 +10,7 @@ import statistics
 from tqdm import tqdm
 
 class Cam:
-    def __init__(self, image_dir="./images"):
+    def __init__(self, image_dir="./images", prename_folder=""):
         
         self.pipeline = rs.pipeline()
         self.config = rs.config()
@@ -20,7 +20,7 @@ class Cam:
         # config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
         self.pipeline.start(self.config)
         current_time = datetime.now().strftime("%b%d_H%H_M%M_S%S")
-        self.image_dir = f"{image_dir}/{current_time}"
+        self.image_dir = f"{image_dir}/{prename_folder}_{current_time}"
         if not os.path.exists(self.image_dir):
             # 如果資料夾不存在，則創建它
             os.makedirs(self.image_dir)
@@ -147,16 +147,19 @@ def intL2DRA(i):
 # --------------------------------------------------------
 if __name__ == "__main__":
     # ----------------------------------------------------
+    # read position csv 
+    csv_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_sim\arm_cube_shuffule_446\position.csv"
+    csv_name = os.path.basename(os.path.dirname(csv_dir))
+    df = read_csv(csv_dir)
+    
+    # ----------------------------------------------------
     # init connect arm and cam
     c = connect_robot()
-    my_cam = Cam(r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_real")
+    my_cam = Cam(r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_real", csv_name)
     address = 0x1100
     
     # ----------------------------------------------------
-    # read position csv 
-    csv_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_sim\arm_cube_shuffule_446\position.csv"
-    df = read_csv(csv_dir)
-
+    # write where.csv
     with open(f'{my_cam.image_dir}/where_csv.txt', 'w') as file:
         file.write(csv_dir)
     # ----------------------------------------------------
