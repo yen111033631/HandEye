@@ -9,6 +9,22 @@ import time
 import statistics
 from tqdm import tqdm
 
+
+def set_image_dir(image_project_dir, csv_name):
+    env_listdir = os.listdir(image_project_dir)
+
+    num = 0
+    for env_dir in env_listdir:
+        if csv_name in env_dir:
+            now_num = int(env_dir[-3:]) 
+            num = now_num if now_num > num else num
+    
+    image_dir = f"{image_project_dir}/{csv_name}_{(num + 1):03d}"
+    if is_save: os.makedirs(image_dir, exist_ok=True)
+
+    return image_dir
+
+
 class Cam:
     def __init__(self, image_dir="./images", prename_folder=""):
         
@@ -20,10 +36,11 @@ class Cam:
         # config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
         self.pipeline.start(self.config)
         current_time = datetime.now().strftime("%b%d_H%H_M%M_S%S")
-        self.image_dir = f"{image_dir}/{prename_folder}_{current_time}"
-        if not os.path.exists(self.image_dir):
-            # 如果資料夾不存在，則創建它
-            os.makedirs(self.image_dir)
+        self.image_dir = image_dir
+        # self.image_dir = f"{image_dir}/{prename_folder}_{current_time}"
+        # if not os.path.exists(self.image_dir):
+        #     # 如果資料夾不存在，則創建它
+        #     os.makedirs(self.image_dir)
         
         self.i = 0
         
@@ -57,8 +74,6 @@ class Cam:
     def close_cam(self):
         self.pipeline.stop()
 
-
-
 def connect_robot(ip="192.168.1.1", port=502):
     # 初始化 Modbus 客戶端
     c = ModbusClient(host=ip, port=port, auto_open=True, unit_id=2)
@@ -78,12 +93,9 @@ def connect_robot(ip="192.168.1.1", port=502):
     
     return c
 
-
 def read_csv(csv_file_path = 'position.csv'):
     # 使用 pandas 讀取 CSV 檔案    
     return pd.read_csv(csv_file_path, index_col=0)
-
-
 
 def get_p_and_j(df, i):
     return df.iloc[i][:3], df.iloc[i][3:9]
@@ -147,24 +159,38 @@ def intL2DRA(i):
 # --------------------------------------------------------
 if __name__ == "__main__":
     # ----------------------------------------------------
+    # some setting
+    is_save = True
+    # ----------------------------------------------------
     # read position csv 
-    csv_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_sim\arm_cube_shuffule_446\position.csv"
+    csv_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_sim\Jun17_H15_M21_S56_010_010_shuffle_False\position.csv"
+    # csv_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_sim\cube_points__.csv"
     csv_name = os.path.basename(os.path.dirname(csv_dir))
     df = read_csv(csv_dir)
+    # df = pd.read_csv(csv_dir)
+    # print(df.shape)
+    # df = df[4:]
+    # ----------------------------------------------------
+    # set images dir
+    image_project_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_real"
+    image_dir = set_image_dir(image_project_dir, csv_name)
     
     # ----------------------------------------------------
     # init connect arm and cam
     c = connect_robot()
-    my_cam = Cam(r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_real", csv_name)
+    # if is_save: my_cam = Cam(r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_real", csv_name)
+    if is_save: my_cam = Cam(image_dir)
     address = 0x1100
     
     # ----------------------------------------------------
     # write where.csv
-    with open(f'{my_cam.image_dir}/where_csv.txt', 'w') as file:
-        file.write(csv_dir)
+    if is_save:
+        with open(f'{my_cam.image_dir}/where_csv.txt', 'w') as file:
+            file.write(csv_dir)
     # ----------------------------------------------------
     # main loop
     for i in tqdm(range(df.shape[0])):
+    # for i in (range(df.shape[0])):
         # ------------------------------------------------
         # reset memory
         num = write_into_regs([[0]*10], address)
@@ -174,6 +200,10 @@ if __name__ == "__main__":
         # ------------------------------------------------
         # get arm position and joints
         p, j = get_p_and_j(df, i)
+        # p = df.iloc[i][:3]
+        # j = [0] * 6
+        # p[-1] = 200
+        print(i, p)
         # ------------------------------------------------
         # send position and joint data (write regs)
         num = write_into_regs([[1], j, p], address)
@@ -185,7 +215,7 @@ if __name__ == "__main__":
                 break
         # ------------------------------------------------
         # take photo 
-        my_cam.capture_pic(image_type="color", image_name=df_row_name) # TODO only capture color
+        if is_save: my_cam.capture_pic(image_type="color", image_name=df_row_name) # TODO only capture color
         # ------------------------------------------------
 
     # ----------------------------------------------------
@@ -193,7 +223,7 @@ if __name__ == "__main__":
     write_into_regs([[-1] * 10], address)
     # ----------------------------------------------------
     # close cam
-    my_cam.close_cam()
+    if is_save: my_cam.close_cam()
     # ----------------------------------------------------
         
         
