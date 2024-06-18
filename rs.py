@@ -8,7 +8,7 @@ import os
 import time
 import statistics
 from tqdm import tqdm
-
+import keyboard
 
 def set_image_dir(image_project_dir, csv_name):
     env_listdir = os.listdir(image_project_dir)
@@ -174,6 +174,7 @@ if __name__ == "__main__":
     # set images dir
     image_project_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_real"
     image_dir = set_image_dir(image_project_dir, csv_name)
+    print(image_dir)
     
     # ----------------------------------------------------
     # init connect arm and cam
@@ -188,6 +189,7 @@ if __name__ == "__main__":
         with open(f'{my_cam.image_dir}/where_csv.txt', 'w') as file:
             file.write(csv_dir)
     # ----------------------------------------------------
+    previous_cube_position_index = None
     # main loop
     for i in tqdm(range(df.shape[0])):
     # for i in (range(df.shape[0])):
@@ -197,6 +199,39 @@ if __name__ == "__main__":
         # ------------------------------------------------
         # get row name 
         df_row_name = df.iloc[i].name
+        # ------------------------------------------------
+        # cube information
+        cube_position_index = df["ball_position_index"][i]
+        cube_position = df.iloc[i][-4: -1]
+        cube_position = [x * 1000 for x in cube_position]
+
+        is_change_cube_position = (previous_cube_position_index != cube_position_index)
+        print(is_change_cube_position, cube_position)
+        print("----")
+
+        if is_change_cube_position:
+            previous_cube_position_index = cube_position_index
+            p = [*cube_position[:2], 100]
+            j = [0] * 6
+            # ------------------------------------------------
+            # send position and joint data (write regs)
+            num = write_into_regs([[1], j, p], address)
+            # ------------------------------------------------
+            # check arm move done (read regs)
+            while True:
+                data = read_regs(1)
+                if data[0] == 2:
+                    break
+            # ------------------------------------------------
+            # 這是一個無限循環，用於不斷檢查鍵盤輸入
+            while True:
+                if keyboard.is_pressed('y'):
+                    print("偵測到 'y' 鍵，程式結束。")
+                    write_into_regs([[3]], address)
+                    time.sleep(0.1)
+                    break
+
+
         # ------------------------------------------------
         # get arm position and joints
         p, j = get_p_and_j(df, i)
@@ -216,6 +251,8 @@ if __name__ == "__main__":
         # ------------------------------------------------
         # take photo 
         if is_save: my_cam.capture_pic(image_type="color", image_name=df_row_name) # TODO only capture color
+        write_into_regs([[3]], address)
+        time.sleep(0.1)
         # ------------------------------------------------
 
     # ----------------------------------------------------
