@@ -163,13 +163,13 @@ if __name__ == "__main__":
     is_save = True
     # ----------------------------------------------------
     # read position csv 
-    csv_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_sim\Jun17_H15_M21_S56_010_010_shuffle_False\position.csv"
+    csv_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_sim\Jun19_H04_M36_S59_010_010_shuffle_True\position.csv"
     # csv_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_sim\cube_points__.csv"
     csv_name = os.path.basename(os.path.dirname(csv_dir))
     df = read_csv(csv_dir)
     # df = pd.read_csv(csv_dir)
     # print(df.shape)
-    # df = df[4:]
+    # df = df[41:]
     # ----------------------------------------------------
     # set images dir
     image_project_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_real"
@@ -190,7 +190,7 @@ if __name__ == "__main__":
             file.write(csv_dir)
     # ----------------------------------------------------
     previous_cube_position_index = None
-    # main loop
+    # main loop/
     for i in tqdm(range(df.shape[0])):
     # for i in (range(df.shape[0])):
         # ------------------------------------------------
