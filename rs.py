@@ -43,7 +43,21 @@ class Cam:
         #     os.makedirs(self.image_dir)
         
         self.i = 0
-        
+    
+    def get_frame(self, image_type=["color"]):
+
+        frames = self.pipeline.wait_for_frames()
+        depth_frame = frames.get_depth_frame()
+        color_frame = frames.get_color_frame()
+
+        depth_image = np.asanyarray(depth_frame.get_data())
+        depth_image = cv2.flip(depth_image, -1)
+        color_image = np.asanyarray(color_frame.get_data())
+        color_image = cv2.flip(color_image, -1)        
+
+        return color_image
+
+
     def capture_pic(self, image_type=["color"], image_name=None):
         if image_name == None: image_name = f"img_{self.i}"
 
