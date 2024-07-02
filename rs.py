@@ -25,6 +25,89 @@ def set_image_dir(image_project_dir, csv_name):
     return image_dir
 
 
+def match_template(image, template):
+    image_draw = image.copy()
+    
+    if len(image.shape) == 3 and image.shape[2] == 3:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+    if len(template.shape) == 3 and template.shape[2] == 3:
+        template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+    
+    
+    # 获取模板的尺寸
+    w, h = template.shape[::-1]
+
+    # 进行模板匹配
+    res = cv2.matchTemplate(image, template, cv2.TM_CCOEFF_NORMED)
+
+    # 找到匹配数值最高的位置
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+
+    # 打印出最高匹配值的位置
+    # print("最高匹配值位置:", max_loc)
+    # print(res[max_loc[1], max_loc[0]])
+    max_value = res[max_loc[1], max_loc[0]]
+
+    # 在原图像中绘制矩形框标记匹配位置
+    top_left = max_loc
+    bottom_right = (top_left[0] + w, top_left[1] + h)
+    
+    # 检查图像是否是彩色图像
+    if len(image_draw.shape) < 3 or image_draw.shape[2] == 1:
+        # print("图像是灰度图，将其转换为彩色图像。")
+        image_draw = cv2.cvtColor(image_draw, cv2.COLOR_GRAY2BGR)
+    # else:
+    #     print("图像是彩色图像。")
+    
+    
+    cv2.rectangle(image_draw, top_left, bottom_right, (0, 255, 0), 2)
+    
+    return image_draw, max_value
+
+
+def write_text_on_image(image, max_value, org=(50, 50)):    
+
+    # 定义多行文字
+    lines_of_text = [
+        f"template matching: {str(max_value)}",
+    ]
+    # 定义初始位置（左下角）
+    org = org
+    
+    # 定义字体
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    
+    # 定义字体大小
+    font_scale = 1
+    
+    # 定义背景颜色（BGR格式）
+    bg_color = (0, 0, 0)  # 黑色
+    
+    # 定义字体厚度
+    thickness = 2
+    
+    # 定义行间距
+    line_spacing = 15
+    
+    text_color = (255, 255, 255)
+
+    # 在图片上添加多行带背景色的文字
+    for i, line in enumerate(lines_of_text):
+        # 计算文字大小
+        (text_width, text_height), baseline = cv2.getTextSize(line, font, font_scale, thickness)
+        
+        # 计算每行文字的位置
+        x, y = org[0], org[1] + i * (text_height + line_spacing)
+        
+        # 绘制背景矩形
+        cv2.rectangle(image, (x, y - text_height - baseline), (x + text_width, y + baseline), bg_color, -1)
+
+        cv2.putText(image, line, (x, y), font, font_scale, text_color, thickness, cv2.LINE_AA)
+
+    
+    return image
+
 class Cam:
     def __init__(self, image_dir="./images", prename_folder=""):
         
@@ -56,6 +139,26 @@ class Cam:
         color_image = cv2.flip(color_image, -1)        
 
         return color_image
+    
+    def show_image(self):
+        while True:
+            color_image = self.get_frame()
+            
+            template = cv2.imread(r"C:\Users\NEAF\code\yen\HandEye\output\tem\tem.bmp", 0)
+            template = template[100:400, 950:1250]
+            
+            color_image, max_value = match_template(color_image, template)
+            
+            color_image = write_text_on_image(color_image, round(max_value, 3))
+            
+            
+            cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)
+            cv2.imshow('RealSense', color_image)
+            key = cv2.waitKey(1)
+            if key & 0xFF == ord('y') or key == 27:
+                cv2.destroyAllWindows()
+                break
+        
 
 
     def capture_pic(self, image_type=["color"], image_name=None):
@@ -177,7 +280,7 @@ if __name__ == "__main__":
     is_save = True
     # ----------------------------------------------------
     # read position csv 
-    csv_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_sim\Jun19_H04_M36_S59_010_010_shuffle_True\position.csv"
+    csv_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_sim\Jun17_H15_M21_S56_010_010_010_shuffle_False_502_36\position.csv"
     # csv_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_sim\cube_points__.csv"
     csv_name = os.path.basename(os.path.dirname(csv_dir))
     df = read_csv(csv_dir)
@@ -238,13 +341,9 @@ if __name__ == "__main__":
                     break
             # ------------------------------------------------
             # 這是一個無限循環，用於不斷檢查鍵盤輸入
-            while True:
-                if keyboard.is_pressed('y'):
-                    print("偵測到 'y' 鍵，程式結束。")
-                    write_into_regs([[3]], address)
-                    time.sleep(0.1)
-                    break
-
+            my_cam.show_image()
+            write_into_regs([[3]], address)
+            time.sleep(0.1)
 
         # ------------------------------------------------
         # get arm position and joints
