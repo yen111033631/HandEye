@@ -9,6 +9,7 @@ import time
 import statistics
 from tqdm import tqdm
 import keyboard
+import threading
 
 def set_image_dir(image_project_dir, csv_name):
     env_listdir = os.listdir(image_project_dir)
@@ -134,11 +135,14 @@ class Cam:
         color_frame = frames.get_color_frame()
 
         depth_image = np.asanyarray(depth_frame.get_data())
-        depth_image = cv2.flip(depth_image, -1)
+        self.depth_image = cv2.flip(depth_image, -1)
         color_image = np.asanyarray(color_frame.get_data())
-        color_image = cv2.flip(color_image, -1)        
+        self.color_image = cv2.flip(color_image, -1)     
+        
+        depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
+        self.images = np.hstack((color_image, depth_colormap))          
 
-        return color_image
+        return self.color_image
     
     def show_image(self):
         while True:
@@ -158,8 +162,15 @@ class Cam:
             if key & 0xFF == ord('y') or key == 27:
                 cv2.destroyAllWindows()
                 break
-        
-
+    
+    def save_image(self, image_type=["color"], image_name=None):
+        if "color" in image_type:
+            cv2.imwrite(f"{self.image_dir}/{image_name}.bmp", self.color_image)
+        if "depth" in image_type:
+            cv2.imwrite(f"{self.image_dir}/{image_name}_depth.bmp", self.depth_image)
+        if "hstack" in image_type:
+            cv2.imwrite(f"{self.image_dir}/{image_name}_hstack.bmp", self.images)        
+            
 
     def capture_pic(self, image_type=["color"], image_name=None):
         if image_name == None: image_name = f"img_{self.i}"
@@ -179,11 +190,11 @@ class Cam:
             images = np.hstack((color_image, depth_colormap))
 
             if "color" in image_type:
-                cv2.imwrite(f"{self.image_dir}/{image_name}.jpg",color_image)
+                cv2.imwrite(f"{self.image_dir}/{image_name}.bmp",color_image)
             if "depth" in image_type:
-                cv2.imwrite(f"{self.image_dir}/{image_name}_depth.jpg",depth_image)
+                cv2.imwrite(f"{self.image_dir}/{image_name}_depth.bmp",depth_image)
             if "hstack" in image_type:
-                cv2.imwrite(f"{self.image_dir}/{image_name}_hstack.jpg",images)        
+                cv2.imwrite(f"{self.image_dir}/{image_name}_hstack.bmp",images)        
 
             self.i += 1
         finally:
@@ -280,13 +291,13 @@ if __name__ == "__main__":
     is_save = True
     # ----------------------------------------------------
     # read position csv 
-    csv_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_sim\Jun17_H15_M21_S56_010_010_010_shuffle_False_502_36\position.csv"
+    csv_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_sim\Jul10_H17_M13_S26_DQN014_result_647_647\position.csv"
     # csv_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_sim\cube_points__.csv"
     csv_name = os.path.basename(os.path.dirname(csv_dir))
     df = read_csv(csv_dir)
     # df = pd.read_csv(csv_dir)
     # print(df.shape)
-    # df = df[41:]
+    # df = df[62:]
     # ----------------------------------------------------
     # set images dir
     image_project_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_real"
@@ -307,6 +318,7 @@ if __name__ == "__main__":
             file.write(csv_dir)
     # ----------------------------------------------------
     previous_cube_position_index = None
+    previous_cube_position = None
     # main loop/
     for i in tqdm(range(df.shape[0])):
     # for i in (range(df.shape[0])):
@@ -322,12 +334,16 @@ if __name__ == "__main__":
         cube_position = df.iloc[i][-4: -1]
         cube_position = [x * 1000 for x in cube_position]
 
-        is_change_cube_position = (previous_cube_position_index != cube_position_index)
+        is_change_cube_position = not(np.all(cube_position == previous_cube_position))
+        print()
         print(is_change_cube_position, cube_position)
         print("----")
 
         if is_change_cube_position:
+            write_into_regs([[3]], address)
+            time.sleep(0.1)
             previous_cube_position_index = cube_position_index
+            previous_cube_position = cube_position
             p = [*cube_position[:2], 100]
             j = [0] * 6
             # ------------------------------------------------
@@ -363,9 +379,16 @@ if __name__ == "__main__":
                 break
         # ------------------------------------------------
         # take photo 
-        if is_save: my_cam.capture_pic(image_type="color", image_name=df_row_name) # TODO only capture color
-        write_into_regs([[3]], address)
-        time.sleep(0.1)
+        my_cam.get_frame()
+        
+        if is_save: 
+            thread = threading.Thread(target=my_cam.save_image, args=(image_type:=["color", "depth", "hstack"], image_name:=df_row_name))
+            thread.start()
+            # my_cam.save_image(image_type=["color", "depth", "hstack"], image_name=df_row_name)
+        # if is_save: my_cam.capture_pic(image_type=["color", "depth", "hstack"], image_name=df_r/ow_name) # TODO only capture color
+        
+        # write_into_regs([[3]], address)
+        # time.sleep(0.1)
         # ------------------------------------------------
 
     # ----------------------------------------------------
