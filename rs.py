@@ -139,8 +139,8 @@ class Cam:
         color_image = np.asanyarray(color_frame.get_data())
         self.color_image = cv2.flip(color_image, -1)     
         
-        depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
-        self.images = np.hstack((color_image, depth_colormap))          
+        depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(self.depth_image, alpha=0.03), cv2.COLORMAP_JET)
+        self.images = np.hstack((self.color_image, depth_colormap))          
 
         return self.color_image
     
@@ -288,16 +288,16 @@ def intL2DRA(i):
 if __name__ == "__main__":
     # ----------------------------------------------------
     # some setting
-    is_save = True
+    is_save = False
     # ----------------------------------------------------
     # read position csv 
-    csv_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_sim\Jul10_H17_M13_S26_DQN014_result_647_647\position.csv"
+    csv_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_sim\Jul16_H14_M43_S14_010_0100_882_882\position.csv"
     # csv_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_sim\cube_points__.csv"
     csv_name = os.path.basename(os.path.dirname(csv_dir))
     df = read_csv(csv_dir)
     # df = pd.read_csv(csv_dir)
     # print(df.shape)
-    # df = df[62:]
+    df = df[703:]
     # ----------------------------------------------------
     # set images dir
     image_project_dir = r"\\140.114.141.95\nas\111\111033631_Yen\ARM\capture_images_real"
@@ -396,6 +396,7 @@ if __name__ == "__main__":
     write_into_regs([[-1] * 10], address)
     # ----------------------------------------------------
     # close cam
+    time.sleep(5)
     if is_save: my_cam.close_cam()
     # ----------------------------------------------------
         
